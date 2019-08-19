@@ -131,7 +131,7 @@ var graphioGremlin = (function(){
 			console.log('Warning: no node limit set for the query. The query may fail if the graph is too big.')
         }
 		gremlin_query_nodes += ".toList();";
-		
+
 		let gremlin_query_edges = "edges = " + traversal_source + ".V(nodes).aggregate('node').outE().as('edge').inV().where(within('node')).select('edge').toList();";
         let gremlin_query_edges_no_vars = "edges = " + traversal_source + ".V()"+has_str+".aggregate('node').outE().as('edge').inV().where(within('node')).select('edge').toList();";
         //let gremlin_query_edges_no_vars = "edges = " + traversal_source + ".V()"+has_str+".bothE();";
@@ -172,18 +172,22 @@ var graphioGremlin = (function(){
         var edge_filter = $('#edge_filter').val();
         var communication_method = $('#communication_method').val();
 		var id = d.id;
+    /*
+    FIXME: this seems not to work with Neptune
 		if(isNaN(id)){ // Add quotes if id is a string (not a number).
 			id = '"'+id+'"';
 		}
+    */
+    id = '"'+id+'"';
 		// Gremlin query
 		var gremlin_query_nodes = 'nodes = ' + traversal_source + '.V('+id+').as("node").both('+(edge_filter?'"'+edge_filter+'"':'')+').as("node").select(all,"node").unfold()'
         // Variant depending on the Gremlin version
-        if (communication_method == "GraphSON3_4") { 
+        if (communication_method == "GraphSON3_4") {
         	// Version 3.4
             gremlin_query_nodes += ".valueMap().with(WithOptions.tokens)";
-            gremlin_query_nodes += 'fold().inject(' + traversal_source + '.V(' + id + ').valueMap().with(WithOptions.tokens)).unfold()';
+            gremlin_query_nodes += '.fold().inject(' + traversal_source + '.V(' + id + ').valueMap().with(WithOptions.tokens)).unfold()';
         } else {
-        	gremlin_query_nodes += 'fold().inject(' + traversal_source + '.V(' + id + ')).unfold()';
+        	gremlin_query_nodes += '.fold().inject(' + traversal_source + '.V(' + id + ')).unfold()';
         }
 		//var gremlin_query_nodes = 'nodes = ' + traversal_source + '.V('+id+').as("node").both('+(edge_filter?'"'+edge_filter+'"':'')+').as("node").select(all,"node").unfold().valueMap()'
 		//gremlin_query_nodes += 'fold().inject(' + traversal_source + '.V('+id+').valueMap()).unfold()'
@@ -220,13 +224,13 @@ var graphioGremlin = (function(){
 				run_ajax_request(gremlin_query,server_url,query_type,active_node,message,callback);
 			}
 			else if (COMMUNICATION_PROTOCOL == 'websocket'){
-				let server_url = "ws://"+server_address+":"+server_port+"/gremlin"
+				let server_url = "wss://"+server_address+":"+server_port+"/gremlin"
 				run_websocket_request(gremlin_query,server_url,query_type,active_node,message,callback);
 			}
 			else {
 				console.log('Bad communication protocol. Check configuration file. Accept "REST" or "websocket" .')
 			}
-				
+
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////
@@ -251,7 +255,7 @@ var graphioGremlin = (function(){
 							//console.log("Results received")
 							if(callback){
 								callback(Data);
-							} else {				
+							} else {
 								handle_server_answer(Data,query_type,active_node,message);
 							}
 			},
@@ -308,7 +312,7 @@ var graphioGremlin = (function(){
 
 		var ws = new WebSocket(server_url);
 		ws.onopen = function (event){
-			ws.send(data,{ mask: true});	
+			ws.send(data,{ mask: true});
 		};
 		ws.onerror = function (err){
 			console.log('Connection error using websocket');
@@ -329,7 +333,7 @@ var graphioGremlin = (function(){
 			var response = JSON.parse(event.data);
 			var code=Number(response.status.code)
 			if(!isInt(code) || code<200 || code>299) {
-				$('#outputArea').html(response.status.message);
+        $('#outputArea').html(response.status.message);
 				$('#messageArea').html("Error retrieving data");
 				return 1;
 			}
@@ -354,7 +358,7 @@ var graphioGremlin = (function(){
 			} else {
 				handle_server_answer(data,query_type,active_node,message);
 			}
-		};		
+		};
 	}
 
 	// Generate uuid for websocket requestId. Code found here:
@@ -407,7 +411,7 @@ var graphioGremlin = (function(){
 			//console.log(data);
 			var graph = arrange_data(data);
 			//console.log(graph)
-			if (query_type=='click') var center_f = 0; //center_f=0 mean no attraction to the center for the nodes 
+			if (query_type=='click') var center_f = 0; //center_f=0 mean no attraction to the center for the nodes
 			else if (query_type=='search') var center_f = 1;
 			else return;
 			graph_viz.refresh_data(graph,center_f,active_node);
@@ -445,7 +449,7 @@ var graphioGremlin = (function(){
 		if (list[i].id == elem) return i;
 	  }
 	  return null;
-	}  
+	}
 
 	/////////////////////////////////////////////////////////////
 	function arrange_datav2(data) {
@@ -508,7 +512,7 @@ var graphioGremlin = (function(){
         var prop_dic = {};
         // VERSION 3.4
         if (isGraphSON3_4) {
-           
+
             for (var key in data) {
                 if (data.hasOwnProperty(key) && key != 'id' && key != 'label' && key != 'type') prop_dic[key] = data[key];
             }
@@ -542,7 +546,7 @@ var graphioGremlin = (function(){
             // NOT VERSION 3.4
             prop_dic = data.properties;
 	        //console.log(prop_dic)
-	        for (var key2 in prop_dic) { 
+	        for (var key2 in prop_dic) {
 		        if (prop_dic.hasOwnProperty(key2)) {
 			        if (data.type == 'vertex'){// Extracting the Vertexproperties (properties of properties for vertices)
 				        var property2 = prop_dic[key2];
